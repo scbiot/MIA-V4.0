@@ -1,0 +1,137 @@
+# ============================================================================
+# MIA V4.0 - DEPENDENCIAS DEL PROYECTO
+# ============================================================================
+# 
+# Este archivo lista todas las dependencias necesarias para ejecutar MIA V4.0
+# Instalar con: pip install -r requirements.txt
+#
+# Versiones específicas para asegurar compatibilidad y reproducibilidad
+# Última actualización: 2025-12-10
+#
+# ============================================================================
+
+# ----------------------------------------------------------------------------
+# CORE - Dependencias Esenciales
+# ----------------------------------------------------------------------------
+
+# HTTP Requests - Para scraping de portales web
+requests>=2.31.0,<3.0.0
+
+# HTML Parsing - Para extraer contenido de páginas web
+beautifulsoup4>=4.12.0,<5.0.0
+
+# HTML Parser adicional (usado por BeautifulSoup)
+lxml>=4.9.0,<5.0.0
+
+# Variables de Entorno - Para cargar configuración desde .env
+python-dotenv>=1.0.0,<2.0.0
+
+# ----------------------------------------------------------------------------
+# AI/ML - Inteligencia Artificial
+# ----------------------------------------------------------------------------
+
+# Google Gemini AI - Para análisis de oportunidades
+google-generativeai>=0.3.0,<1.0.0
+
+# ----------------------------------------------------------------------------
+# DATA PROCESSING - Procesamiento de Datos
+# ----------------------------------------------------------------------------
+
+# Pandas - Para manipulación de datos (opcional, futuro)
+# pandas>=2.0.0,<3.0.0
+
+# ----------------------------------------------------------------------------
+# GOOGLE SHEETS INTEGRATION (Fase 4 - Opcional)
+# ----------------------------------------------------------------------------
+
+# Google Sheets API - Para escribir resultados en Google Sheets
+# Descomenta cuando implementes Fase 4
+# gspread>=5.12.0,<6.0.0
+# google-auth>=2.23.0,<3.0.0
+# google-auth-oauthlib>=1.1.0,<2.0.0
+# google-auth-httplib2>=0.1.1,<1.0.0
+
+# ----------------------------------------------------------------------------
+# TESTING (Fase 6 - Opcional)
+# ----------------------------------------------------------------------------
+
+# Framework de testing
+# pytest>=7.4.0,<8.0.0
+# pytest-cov>=4.1.0,<5.0.0  # Coverage reports
+# pytest-mock>=3.12.0,<4.0.0  # Mocking
+
+# ----------------------------------------------------------------------------
+# CODE QUALITY (Fase 6 - Opcional)
+# ----------------------------------------------------------------------------
+
+# Linting y formateo
+# pylint>=3.0.0,<4.0.0
+# flake8>=6.1.0,<7.0.0
+# black>=23.0.0,<24.0.0
+# mypy>=1.7.0,<2.0.0  # Type checking
+
+# ----------------------------------------------------------------------------
+# SCHEDULING (Fase 5 - Opcional)
+# ----------------------------------------------------------------------------
+
+# Scheduler para ejecución automática
+# APScheduler>=3.10.0,<4.0.0
+
+# ----------------------------------------------------------------------------
+# WEB SCRAPING AVANZADO (Fase 2 - Opcional)
+# ----------------------------------------------------------------------------
+
+# Selenium - Para portales con JavaScript dinámico
+# selenium>=4.15.0,<5.0.0
+# webdriver-manager>=4.0.0,<5.0.0  # Auto-gestión de drivers
+
+# Scrapy - Framework de scraping avanzado (alternativa)
+# scrapy>=2.11.0,<3.0.0
+
+# ----------------------------------------------------------------------------
+# UTILITIES - Utilidades Adicionales
+# ----------------------------------------------------------------------------
+
+# Manejo de fechas y tiempos
+# python-dateutil>=2.8.0,<3.0.0
+
+# Expresiones regulares mejoradas
+# regex>=2023.10.0,<2024.0.0
+
+# Validación de datos
+# pydantic>=2.5.0,<3.0.0
+
+# ----------------------------------------------------------------------------
+# MONITORING & LOGGING (Fase 5 - Opcional)
+# ----------------------------------------------------------------------------
+
+# Logging avanzado
+# loguru>=0.7.0,<1.0.0
+
+# Métricas y monitoreo
+# prometheus-client>=0.19.0,<1.0.0
+
+# ----------------------------------------------------------------------------
+# VISUALIZATION (Fase 7 - Opcional)
+# ----------------------------------------------------------------------------
+
+# Dashboard web interactivo
+# streamlit>=1.28.0,<2.0.0
+# plotly>=5.18.0,<6.0.0
+# dash>=2.14.0,<3.0.0
+
+# ----------------------------------------------------------------------------
+# EMAIL NOTIFICATIONS (Fase 4 - Opcional)
+# ----------------------------------------------------------------------------
+
+# Envío de emails
+# sendgrid>=6.11.0,<7.0.0
+
+# ----------------------------------------------------------------------------
+# NOTAS
+# ----------------------------------------------------------------------------
+# - Las versiones usan "compatible release" (~=) o rangos (>=, <)
+# - Esto permite actualizaciones de parches pero evita breaking changes
+# - Para producción, considerar "pinear" versiones exactas (==)
+# - Actualizar regularmente por seguridad: pip list --outdated
+# ============================================================================

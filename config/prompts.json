@@ -1,0 +1,36 @@
+{
+    "_comentario_general": "================================================================================",
+    "_comentario_titulo": "MIA V4.0 - CONFIGURACIÓN DE PROMPTS PARA GEMINI AI",
+    "_comentario_separador": "================================================================================",
+    "_comentario_objetivo": "OBJETIVO: Este archivo contiene las plantillas de prompts que se envían a Gemini AI para analizar oportunidades comerciales detectadas en portales de compras públicas",
+    "_comentario_etapa": "ETAPA: 0 - CONFIGURACIÓN",
+    "_comentario_uso": "USO: El módulo analyzer.py carga este archivo y usa la plantilla 'template' para construir el prompt que se envía a Gemini",
+    "_comentario_variables": "VARIABLES: {matched_keywords} y {text_content} se reemplazan dinámicamente con datos reales",
+    "_comentario_modificacion": "MODIFICACIÓN: Este archivo puede editarse sin tocar código Python para ajustar el comportamiento de Gemini",
+    "_comentario_fin": "================================================================================",
+    "analysis_prompt": {
+        "version": "1.0",
+        "language": "es",
+        "description": "Prompt para análisis de oportunidades comerciales detectadas en portales de compras públicas. Este prompt instruye a Gemini AI sobre cómo clasificar, evaluar y resumir cada oportunidad en español, enfocándose en las palabras clave que activaron la detección.",
+        "template": "Analiza el siguiente texto extraído de un portal de compras públicas y extrae la siguiente información en formato JSON:\n\n**CONTEXTO IMPORTANTE:**\n- Esta oportunidad fue detectada porque contiene las siguientes palabras clave: {matched_keywords}\n- El análisis debe enfocarse en evaluar la relevancia de esta oportunidad en relación con estas palabras clave\n\n**CAMPOS A EXTRAER (todos en castellano):**\n\n1. **MIA_Rubro**: Clasifica la oportunidad en uno de los siguientes rubros (o 'Otros' si no aplica):\n   - Purificación - Ingeniería\n   - Purificación - Provisión\n   - Purificación - Servicios\n   - Purificación - Gestión Hídrica\n   - Efluentes - Ingeniería\n   - Efluentes - Provisión\n   - Efluentes - Servicios\n   - Efluentes - Gestión Hídrica\n   - Otros\n\n2. **MIA_Score_IA**: Puntaje de relevancia de 0 a 100, donde:\n   - 0-20: Muy baja relevancia (mención tangencial de las keywords)\n   - 21-40: Baja relevancia (keywords presentes pero no centrales)\n   - 41-60: Relevancia media (keywords importantes pero no críticas)\n   - 61-80: Alta relevancia (keywords centrales en la oportunidad)\n   - 81-100: Muy alta relevancia (oportunidad directamente relacionada con las keywords)\n\n3. **MIA_Resumen_Tecnico**: Resumen técnico en castellano (máximo 300 palabras) que incluya:\n   - Tipo de oportunidad (licitación, concurso, etc.)\n   - Descripción del requerimiento\n   - Relación específica con las palabras clave detectadas: {matched_keywords}\n   - Aspectos técnicos relevantes\n\n4. **MIA_Link_al_Pliego**: URL del pliego o documento técnico si se encuentra en el texto (dejar vacío si no se encuentra)\n\n5. **MIA_Empresa_Asignada**: Basándose en el rubro y tipo de oportunidad, sugiere qué empresa del grupo debería atenderla:\n   - Water Tech S.A. (tratamiento de agua, purificación)\n   - Eco Tech S.A. (efluentes, tratamiento ambiental)\n   - TBD (por determinar)\n\n6. **MIA_Preguntas_Tecnicas**: Lista de preguntas técnicas específicas que deberían responderse para evaluar la oportunidad (dejar vacío si no aplica)\n\n**IMPORTANTE:**\n- Responde ÚNICAMENTE en castellano\n- Enfoca el análisis en las palabras clave detectadas: {matched_keywords}\n- Si el texto no está relacionado con las keywords, asigna un score bajo (0-30)\n- Devuelve SOLO el JSON, sin texto adicional\n\n**TEXTO A ANALIZAR:**\n{text_content}\n\n**RESPONDE EN FORMATO JSON:**",
+        "variables": {
+            "matched_keywords": "Lista de palabras clave que activaron la detección (se reemplaza dinámicamente)",
+            "text_content": "Texto completo extraído del portal, truncado a 10000 caracteres (se reemplaza dinámicamente)"
+        },
+        "notas_tecnicas": {
+            "truncamiento": "El texto se trunca a 10000 caracteres para no exceder límites de tokens de Gemini",
+            "formato_respuesta": "Gemini debe retornar SOLO JSON, sin markdown ni texto adicional",
+            "idioma": "Todas las respuestas deben estar en español (castellano)",
+            "enfoque": "El análisis debe centrarse en las keywords detectadas, no en todo el contenido"
+        }
+    },
+    "output_format": {
+        "_descripcion": "Estructura esperada de la respuesta JSON de Gemini AI",
+        "MIA_Rubro": "string - Clasificación en uno de los 8 rubros principales o 'Otros'",
+        "MIA_Score_IA": "integer (0-100) - Puntaje de relevancia de la oportunidad",
+        "MIA_Resumen_Tecnico": "string (max 300 palabras) - Resumen técnico en español",
+        "MIA_Link_al_Pliego": "string (URL o vacío) - Link al pliego técnico si se encuentra",
+        "MIA_Empresa_Asignada": "string - Sugerencia de empresa (Water Tech S.A. / Eco Tech S.A. / TBD)",
+        "MIA_Preguntas_Tecnicas": "string (lista o vacío) - Preguntas para evaluar la oportunidad"
+    }
+}
