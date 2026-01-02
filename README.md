@@ -9,7 +9,7 @@
 
 **Sistema inteligente de detección y análisis de oportunidades comerciales en portales de compras públicas**
 
-[Instalación](#-instalación) • [Uso](#-uso-rápido) • [Documentación](#-documentación) • [Roadmap](#-roadmap)
+[Instalación](#-instalación) • [Uso](#-uso-rápido) • [Documentación](#-documentación) • [Roadmap](#-roadmap) • [GitHub](https://github.com/scbiot/MIA-V4.0)
 
 </div>
 
@@ -57,7 +57,7 @@ Detectar automáticamente oportunidades comerciales en los sectores de:
 
 ```bash
 # 1. Clonar repositorio
-git clone <URL_REPOSITORIO>
+git clone https://github.com/scbiot/MIA-V4.0.git
 cd MIA-V4.0
 
 # 2. Crear entorno virtual
@@ -154,11 +154,15 @@ MIA-V4.0/
 - [x] Archivos de configuración (.env, requirements.txt)
 - [x] Guías de instalación y uso
 
-### 🔄 Fase 1: Refactorización Base (EN PROGRESO)
-- [ ] Manejo robusto de errores
-- [ ] Retry logic y rate limiting
-- [ ] Sistema de logging mejorado
-- [ ] Validación de datos
+### 🔄 Fase 1: Refactorización Base (EN PROGRESO - 84%)
+- [x] Manejo robusto de errores HTTP
+- [x] Retry logic y rate limiting
+- [x] Sistema de logging mejorado con rotación
+- [x] Validación de datos y backups automáticos
+- [x] Validación de respuestas JSON de Gemini
+- [x] Retry con backoff exponencial para API
+- [ ] Caché de respuestas de Gemini (opcional)
+- [ ] Métricas de costo de API (opcional)
 
 ### 📅 Fase 2: Expansión de Portales (PLANEADA)
 - [ ] Activar 34 portales adicionales
@@ -278,7 +282,8 @@ Para sugerencias o reportar problemas:
 
 **Desarrollado por**: Water Tech S.A.  
 **Versión**: 4.0 - Stage 1  
-**Última actualización**: Diciembre 2025
+**Última actualización**: Enero 2026  
+**Repositorio**: [github.com/scbiot/MIA-V4.0](https://github.com/scbiot/MIA-V4.0)
 
 ---
 
