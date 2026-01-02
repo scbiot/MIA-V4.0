@@ -78,14 +78,17 @@ google-generativeai>=0.3.0,<1.0.0
 # APScheduler>=3.10.0,<4.0.0
 
 # ----------------------------------------------------------------------------
-# WEB SCRAPING AVANZADO (Fase 2 - Opcional)
+# WEB SCRAPING AVANZADO (Fase 2A - ACTIVO)
 # ----------------------------------------------------------------------------
 
 # Selenium - Para portales con JavaScript dinámico
-# selenium>=4.15.0,<5.0.0
-# webdriver-manager>=4.0.0,<5.0.0  # Auto-gestión de drivers
+selenium>=4.15.0,<5.0.0
+webdriver-manager>=4.0.0,<5.0.0  # Auto-gestión de drivers
 
-# Scrapy - Framework de scraping avanzado (alternativa)
+# PyPDF2 - Para extracción de PDFs de pliegos (opcional)
+PyPDF2>=3.0.0,<4.0.0
+
+# Scrapy - Framework de scraping avanzado (alternativa - no usado actualmente)
 # scrapy>=2.11.0,<3.0.0
 
 # ----------------------------------------------------------------------------

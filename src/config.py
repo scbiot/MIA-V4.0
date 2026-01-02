@@ -162,6 +162,92 @@ PORTALS = [
         "enabled": True,
         "notes": "Sección Tercera - Contrataciones (Procurement Section)"
     },
+    
+    # ========================================================================
+    # GROUP 2A - FASE 2A: PORTALES CRÍTICOS (4 portales)
+    # ========================================================================
+    # Portales de máximo valor para el negocio
+    # Implementados en Fase 2A - 2026-01-02
+    # ========================================================================
+    
+    # ------------------------------------------------------------------------
+    # PORTAL 4: aysa.com.ar
+    # ------------------------------------------------------------------------
+    # Agua y Saneamientos Argentinos - Empresa de agua más grande
+    # PRIORIDAD: ⭐⭐⭐⭐⭐ CRÍTICA
+    # VALOR: 🔴 MUY ALTO (100% alineado con el negocio)
+    # ------------------------------------------------------------------------
+    {
+        "name": "aysa.com.ar",
+        "url": "https://aysa.com.ar",
+        "type": "Empresa Estatal",
+        "search_method": "Direct Scraping",
+        "enabled": True,
+        "use_selenium": False,
+        "phase": "2A",
+        "priority": 5,
+        "notes": "Empresa de agua - 100% relevante para Water Tech"
+    },
+    
+    # ------------------------------------------------------------------------
+    # PORTAL 5: opc.gba.gob.ar
+    # ------------------------------------------------------------------------
+    # Oficina Provincial de Contrataciones - Provincia de Buenos Aires
+    # PRIORIDAD: ⭐⭐⭐⭐⭐ CRÍTICA
+    # VALOR: 🔴 MUY ALTO (Provincia más grande de Argentina)
+    # ------------------------------------------------------------------------
+    {
+        "name": "opc.gba.gob.ar",
+        "url": "https://opc.gba.gob.ar",
+        "type": "Portal Provincial",
+        "search_method": "Portal Search",
+        "enabled": True,
+        "use_selenium": False,
+        "phase": "2A",
+        "priority": 5,
+        "notes": "Provincia de Buenos Aires - Alto volumen de licitaciones"
+    },
+    
+    # ------------------------------------------------------------------------
+    # PORTAL 6: buenosairescompras.gob.ar
+    # ------------------------------------------------------------------------
+    # Portal de Compras de la Ciudad Autónoma de Buenos Aires
+    # PRIORIDAD: ⭐⭐⭐⭐⭐ CRÍTICA
+    # VALOR: 🔴 MUY ALTO (Ciudad de Buenos Aires)
+    # ------------------------------------------------------------------------
+    {
+        "name": "buenosairescompras.gob.ar",
+        "url": "https://buenosairescompras.gob.ar",
+        "type": "Portal Municipal",
+        "search_method": "Category + Search",
+        "enabled": True,
+        "use_selenium": False,
+        "phase": "2A",
+        "priority": 5,
+        "notes": "Ciudad de Buenos Aires - Gran volumen de licitaciones"
+    },
+    
+    # ------------------------------------------------------------------------
+    # PORTAL 7: proveedores.ypf.com
+    # ------------------------------------------------------------------------
+    # Portal de Proveedores de YPF
+    # PRIORIDAD: ⭐⭐⭐⭐⭐ CRÍTICA
+    # VALOR: 🔴 MUY ALTO (Grandes proyectos)
+    # COMPLEJIDAD: 🔴 Alta (requiere autenticación)
+    # ------------------------------------------------------------------------
+    {
+        "name": "proveedores.ypf.com",
+        "url": "https://proveedores.ypf.com",
+        "type": "Portal Corporativo",
+        "search_method": "Analysis Required",
+        "enabled": False,  # Deshabilitado hasta análisis de viabilidad
+        "use_selenium": True,
+        "phase": "2A",
+        "priority": 5,
+        "requires_auth": True,
+        "notes": "YPF - Requiere análisis de viabilidad (posible autenticación)"
+    },
+    
     # ========================================================================
     # PORTALES INACTIVADOS (GROUPS 2-8)
     # ========================================================================
