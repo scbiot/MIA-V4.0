@@ -49,6 +49,8 @@ import os
 import json
 import logging
 import time
+import hashlib
+from datetime import datetime, timedelta
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -84,10 +86,32 @@ class Analyzer:
             (permite testing sin credenciales)
         """
         self.logger = logging.getLogger(__name__)
-        from src.config import GEMINI_API_KEY, GEMINI_MODEL, GEMINI_RETRY_ATTEMPTS
+        from src.config import (
+            GEMINI_API_KEY, GEMINI_MODEL, GEMINI_RETRY_ATTEMPTS,
+            GEMINI_ENABLE_CACHE, GEMINI_CACHE_TTL_HOURS,
+            GEMINI_COST_PER_1K_TOKENS, GEMINI_METRICS_FILE
+        )
         
         self.api_key = GEMINI_API_KEY
         self.retry_attempts = GEMINI_RETRY_ATTEMPTS
+        self.enable_cache = GEMINI_ENABLE_CACHE
+        self.cache_ttl_hours = GEMINI_CACHE_TTL_HOURS
+        self.cost_per_1k_tokens = GEMINI_COST_PER_1K_TOKENS
+        self.metrics_file = GEMINI_METRICS_FILE
+        
+        # Inicializar caché en memoria
+        self.cache = {}  # {hash: {"response": data, "timestamp": datetime, "tokens": int}}
+        
+        # Inicializar métricas
+        self.metrics = {
+            "total_requests": 0,
+            "cache_hits": 0,
+            "cache_misses": 0,
+            "total_tokens": 0,
+            "total_cost_usd": 0.0,
+            "requests_by_date": {}
+        }
+        self._load_metrics()
         
         if self.api_key:
             # Configurar cliente de Gemini con la API key
@@ -138,6 +162,184 @@ MIA_Rubro, MIA_Score_IA, MIA_Link_al_Pliego, MIA_Resumen_Tecnico, MIA_Empresa_As
 Responde en castellano.
 
 Texto: {text_content}"""
+
+    # ========================================================================
+    # MÉTODOS DE CACHÉ Y MÉTRICAS
+    # ========================================================================
+    
+    def _generate_cache_key(self, text_content):
+        """
+        Genera una clave de caché única basada en el contenido del texto.
+        
+        OBJETIVO:
+            Crear un hash único para cada texto analizado, permitiendo
+            detectar textos duplicados y reutilizar análisis previos
+        
+        PARÁMETROS:
+            text_content (str): Texto a analizar
+        
+        RETORNO:
+            String con hash SHA-256 del texto (primeros 16 caracteres)
+        """
+        # Normalizar texto (minúsculas, sin espacios extra)
+        normalized = text_content.lower().strip()
+        # Generar hash SHA-256
+        hash_object = hashlib.sha256(normalized.encode('utf-8'))
+        # Retornar primeros 16 caracteres del hash
+        return hash_object.hexdigest()[:16]
+    
+    def _check_cache(self, cache_key):
+        """
+        Verifica si existe una respuesta en caché y si aún es válida.
+        
+        OBJETIVO:
+            Evitar llamadas redundantes a Gemini API reutilizando
+            análisis previos de textos idénticos
+        
+        PARÁMETROS:
+            cache_key (str): Clave de caché generada por _generate_cache_key
+        
+        RETORNO:
+            Diccionario con análisis si está en caché y es válido, None si no
+        """
+        if not self.enable_cache:
+            return None
+        
+        if cache_key not in self.cache:
+            return None
+        
+        cached_item = self.cache[cache_key]
+        
+        # Verificar si el caché ha expirado
+        cache_age = datetime.now() - cached_item["timestamp"]
+        if cache_age > timedelta(hours=self.cache_ttl_hours):
+            # Caché expirado, eliminarlo
+            del self.cache[cache_key]
+            self.logger.debug(f"Caché expirado para key: {cache_key}")
+            return None
+        
+        # Caché válido
+        self.logger.info(f"Cache HIT para key: {cache_key} (edad: {cache_age})")
+        return cached_item["response"]
+    
+    def _save_to_cache(self, cache_key, response_data, tokens_used):
+        """
+        Guarda una respuesta de Gemini en el caché.
+        
+        PARÁMETROS:
+            cache_key (str): Clave de caché
+            response_data (dict): Respuesta de Gemini
+            tokens_used (int): Número de tokens utilizados
+        """
+        if not self.enable_cache:
+            return
+        
+        self.cache[cache_key] = {
+            "response": response_data,
+            "timestamp": datetime.now(),
+            "tokens": tokens_used
+        }
+        self.logger.debug(f"Guardado en caché: {cache_key}")
+    
+    def _load_metrics(self):
+        """
+        Carga métricas de uso de API desde archivo JSON.
+        
+        OBJETIVO:
+            Mantener un registro persistente del uso de Gemini API
+            para tracking de costos y optimización
+        """
+        try:
+            if os.path.exists(self.metrics_file):
+                with open(self.metrics_file, 'r', encoding='utf-8') as f:
+                    loaded_metrics = json.load(f)
+                    # Actualizar métricas con datos cargados
+                    self.metrics.update(loaded_metrics)
+                    self.logger.debug(f"Métricas cargadas: {self.metrics['total_requests']} requests")
+        except Exception as e:
+            self.logger.warning(f"No se pudieron cargar métricas: {e}")
+    
+    def _save_metrics(self):
+        """
+        Guarda métricas de uso de API en archivo JSON.
+        """
+        try:
+            # Crear directorio logs/ si no existe
+            os.makedirs(os.path.dirname(self.metrics_file), exist_ok=True)
+            
+            with open(self.metrics_file, 'w', encoding='utf-8') as f:
+                json.dump(self.metrics, f, indent=2, ensure_ascii=False)
+                self.logger.debug("Métricas guardadas")
+        except Exception as e:
+            self.logger.error(f"Error guardando métricas: {e}")
+    
+    def _estimate_tokens(self, text):
+        """
+        Estima el número de tokens en un texto.
+        
+        OBJETIVO:
+            Aproximar el número de tokens para calcular costos
+            Regla aproximada: 1 token ≈ 4 caracteres en español
+        
+        PARÁMETROS:
+            text (str): Texto a estimar
+        
+        RETORNO:
+            int: Número estimado de tokens
+        """
+        # Estimación: 1 token ≈ 4 caracteres
+        return len(text) // 4
+    
+    def _update_metrics(self, tokens_used, from_cache=False):
+        """
+        Actualiza métricas de uso de API.
+        
+        PARÁMETROS:
+            tokens_used (int): Número de tokens utilizados
+            from_cache (bool): Si la respuesta vino del caché
+        """
+        today = datetime.now().strftime('%Y-%m-%d')
+        
+        # Actualizar contadores generales
+        self.metrics["total_requests"] += 1
+        
+        if from_cache:
+            self.metrics["cache_hits"] += 1
+        else:
+            self.metrics["cache_misses"] += 1
+            self.metrics["total_tokens"] += tokens_used
+            
+            # Calcular costo
+            cost = (tokens_used / 1000) * self.cost_per_1k_tokens
+            self.metrics["total_cost_usd"] += cost
+        
+        # Actualizar métricas por fecha
+        if today not in self.metrics["requests_by_date"]:
+            self.metrics["requests_by_date"][today] = {
+                "requests": 0,
+                "cache_hits": 0,
+                "tokens": 0,
+                "cost_usd": 0.0
+            }
+        
+        self.metrics["requests_by_date"][today]["requests"] += 1
+        
+        if from_cache:
+            self.metrics["requests_by_date"][today]["cache_hits"] += 1
+        else:
+            self.metrics["requests_by_date"][today]["tokens"] += tokens_used
+            cost = (tokens_used / 1000) * self.cost_per_1k_tokens
+            self.metrics["requests_by_date"][today]["cost_usd"] += cost
+        
+        # Guardar métricas
+        self._save_metrics()
+        
+        # Log de métricas
+        cache_rate = (self.metrics["cache_hits"] / self.metrics["total_requests"] * 100) if self.metrics["total_requests"] > 0 else 0
+        self.logger.info(f"Métricas API - Total: {self.metrics['total_requests']} | "
+                        f"Cache: {cache_rate:.1f}% | "
+                        f"Tokens: {self.metrics['total_tokens']} | "
+                        f"Costo: ${self.metrics['total_cost_usd']:.4f}")
 
     # ========================================================================
     # MÉTODO PRIVADO: VALIDAR RESPUESTA DE ANÁLISIS
@@ -296,6 +498,21 @@ Texto: {text_content}"""
             return None
 
         # --------------------------------------------------------------------
+        # VERIFICAR CACHÉ
+        # --------------------------------------------------------------------
+        # Generar clave de caché basada en el contenido
+        # --------------------------------------------------------------------
+        cache_key = self._generate_cache_key(text_content)
+        
+        # Verificar si existe en caché
+        cached_response = self._check_cache(cache_key)
+        if cached_response is not None:
+            # Respuesta encontrada en caché
+            tokens_estimated = self._estimate_tokens(text_content)
+            self._update_metrics(tokens_estimated, from_cache=True)
+            return cached_response
+
+        # --------------------------------------------------------------------
         # PREPARACIÓN DEL PROMPT
         # --------------------------------------------------------------------
         # Convierte lista de keywords en string para incluir en el prompt
@@ -303,10 +520,14 @@ Texto: {text_content}"""
         keywords_str = ", ".join(matched_keywords) if matched_keywords else "N/A"
         
         # Construir prompt usando plantilla con variables
+        truncated_text = text_content[:10000]  # Truncar a 10k caracteres
         prompt = self.prompt_template.format(
             matched_keywords=keywords_str,
-            text_content=text_content[:10000]  # Truncar a 10k caracteres (límite de tokens)
+            text_content=truncated_text
         )
+        
+        # Estimar tokens para métricas
+        tokens_estimated = self._estimate_tokens(prompt + truncated_text)
         
         # --------------------------------------------------------------------
         # FUNCIÓN INTERNA PARA LLAMADA A GEMINI
@@ -335,6 +556,8 @@ Texto: {text_content}"""
             
             if analysis_data is None:
                 self.logger.error("Gemini API call failed after all retry attempts")
+                # Actualizar métricas de fallo
+                self._update_metrics(tokens_estimated, from_cache=False)
                 return None
             
             # ----------------------------------------------------------------
@@ -343,7 +566,15 @@ Texto: {text_content}"""
             if not self._validate_analysis_response(analysis_data):
                 self.logger.error("Gemini response failed validation")
                 self.logger.debug(f"Invalid response: {json.dumps(analysis_data, indent=2)}")
+                # Actualizar métricas de fallo
+                self._update_metrics(tokens_estimated, from_cache=False)
                 return None
+            
+            # ----------------------------------------------------------------
+            # GUARDAR EN CACHÉ Y ACTUALIZAR MÉTRICAS
+            # ----------------------------------------------------------------
+            self._save_to_cache(cache_key, analysis_data, tokens_estimated)
+            self._update_metrics(tokens_estimated, from_cache=False)
             
             # Respuesta válida
             self.logger.debug(f"Analysis successful: {analysis_data.get('MIA_Rubro')} - Score: {analysis_data.get('MIA_Score_IA')}")
@@ -355,8 +586,10 @@ Texto: {text_content}"""
         except json.JSONDecodeError as e:
             # Error: Gemini no retornó JSON válido
             self.logger.error(f"Gemini response is not valid JSON: {e}")
+            self._update_metrics(tokens_estimated, from_cache=False)
             return None
         except Exception as e:
             # Cualquier otro error no manejado
             self.logger.error(f"Unexpected error in analysis: {e}")
+            self._update_metrics(tokens_estimated, from_cache=False)
             return None

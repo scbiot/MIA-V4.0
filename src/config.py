@@ -88,8 +88,16 @@ JSON_LOGS = os.getenv("JSON_LOGS", "false").lower() == "true"
 # ============================================================================
 # GEMINI_RETRY_ATTEMPTS: Número de intentos de retry en caso de error de API
 #                        Usa backoff exponencial: 1s, 2s, 4s, etc.
+# GEMINI_ENABLE_CACHE: Habilitar caché de respuestas de Gemini (reduce costos)
+# GEMINI_CACHE_TTL_HOURS: Tiempo de vida del caché en horas
+# GEMINI_COST_PER_1K_TOKENS: Costo aproximado por 1000 tokens (USD)
+# GEMINI_METRICS_FILE: Archivo para guardar métricas de uso de API
 # ============================================================================
 GEMINI_RETRY_ATTEMPTS = int(os.getenv("GEMINI_RETRY_ATTEMPTS", "3"))
+GEMINI_ENABLE_CACHE = os.getenv("GEMINI_ENABLE_CACHE", "true").lower() == "true"
+GEMINI_CACHE_TTL_HOURS = int(os.getenv("GEMINI_CACHE_TTL_HOURS", "24"))
+GEMINI_COST_PER_1K_TOKENS = float(os.getenv("GEMINI_COST_PER_1K_TOKENS", "0.00015"))  # Flash model
+GEMINI_METRICS_FILE = os.getenv("GEMINI_METRICS_FILE", "logs/gemini_metrics.json")
 
 # ============================================================================
 # PORTALS - LISTA DE PORTALES DE COMPRAS PÚBLICAS
