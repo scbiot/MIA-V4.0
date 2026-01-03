@@ -85,10 +85,13 @@ class AysaScraper(PortalSearcher):
         Busca licitaciones en AySA que coincidan con las keywords.
         
         ESTRATEGIA:
-            1. Acceder a sección de licitaciones
-            2. Extraer listado de licitaciones activas
-            3. Filtrar por keywords
-            4. Extraer detalles de cada licitación
+            1. Acceder a ambas secciones de licitaciones:
+               - Obras de Infraestructura
+               - Bienes, Servicios y Obras de Mejora
+            2. Hacer click en botón "BUSCAR" para cargar resultados
+            3. Filtrar por keywords si es necesario
+            4. Extraer datos de la tabla de resultados
+            5. Obtener detalles de cada licitación
         
         PARÁMETROS:
             keywords (list): Lista de palabras clave a buscar
@@ -99,27 +102,137 @@ class AysaScraper(PortalSearcher):
         self.logger.info(f"Buscando en {self.name} con keywords: {keywords}")
         results = []
         
+        # URLs de las dos secciones de licitaciones
+        sections = [
+            {
+                "name": "Obras de Infraestructura",
+                "url": "https://aysa.com.ar/proveedores/licitaciones/licitaciones_infraestructura/"
+            },
+            {
+                "name": "Bienes, Servicios y Obras de Mejora",
+                "url": "https://aysa.com.ar/proveedores/licitaciones/Licitaciones-Bienes-Servicios/"
+            }
+        ]
+        
+        # Usar Selenium para interactuar con el portal
+        driver = None
         try:
-            # TODO: Implementar lógica específica de AySA
-            # Por ahora, retornar estructura vacía
-            self.logger.warning(f"Scraper de {self.name} aún no implementado completamente")
+            from src.portals.phase2a import get_selenium_driver
+            driver = get_selenium_driver(headless=True)
             
-            # Placeholder para desarrollo futuro
-            # results = self._scrape_aysa_licitaciones(keywords)
+            for section in sections:
+                self.logger.info(f"Escaneando sección: {section['name']}")
+                
+                try:
+                    # Navegar a la sección
+                    driver.get(section['url'])
+                    time.sleep(2)  # Esperar carga de página
+                    
+                    # Hacer click en botón BUSCAR para cargar resultados
+                    search_button = driver.find_element(By.ID, "btnSearch")
+                    search_button.click()
+                    time.sleep(3)  # Esperar carga de resultados
+                    
+                    # Extraer resultados de la tabla
+                    section_results = self._extract_tender_results(driver, keywords, section['name'])
+                    results.extend(section_results)
+                    
+                    self.logger.info(f"Encontradas {len(section_results)} oportunidades en {section['name']}")
+                    
+                except Exception as e:
+                    self.logger.error(f"Error en sección {section['name']}: {e}")
+                    continue
             
         except Exception as e:
             self.logger.error(f"Error en scraper de {self.name}: {e}")
+        finally:
+            if driver:
+                driver.quit()
         
-        self.logger.info(f"Encontradas {len(results)} oportunidades en {self.name}")
+        self.logger.info(f"Total encontradas: {len(results)} oportunidades en {self.name}")
         return results
     
-    def _scrape_aysa_licitaciones(self, keywords):
+    def _extract_tender_results(self, driver, keywords, section_name):
         """
-        Método privado para scraping específico de AySA.
-        A implementar en próxima iteración.
+        Extrae resultados de licitaciones de la tabla.
+        
+        PARÁMETROS:
+            driver: WebDriver de Selenium
+            keywords (list): Keywords para filtrar
+            section_name (str): Nombre de la sección
+        
+        RETORNO:
+            list: Lista de oportunidades extraídas
         """
-        # TODO: Implementar scraping específico
-        pass
+        results = []
+        
+        try:
+            # Buscar tabla de resultados
+            # La tabla está dentro de un contenedor con clase específica
+            table_rows = driver.find_elements(By.CSS_SELECTOR, "table tbody tr")
+            
+            for row in table_rows:
+                try:
+                    # Extraer datos de cada columna
+                    cells = row.find_elements(By.TAG_NAME, "td")
+                    
+                    if len(cells) < 4:
+                        continue
+                    
+                    # Estructura de la tabla:
+                    # 0: Estado
+                    # 1: N° Licitación
+                    # 2: Objeto (descripción)
+                    # 3: Fechas
+                    # 4: Presupuesto
+                    
+                    estado = cells[0].text.strip()
+                    numero = cells[1].text.strip()
+                    objeto = cells[2].text.strip()
+                    fechas = cells[3].text.strip() if len(cells) > 3 else ""
+                    presupuesto = cells[4].text.strip() if len(cells) > 4 else "No aplica"
+                    
+                    # Filtrar por keywords si se especificaron
+                    if keywords:
+                        texto_completo = f"{objeto} {numero}".lower()
+                        if not any(kw.lower() in texto_completo for kw in keywords):
+                            continue
+                    
+                    # Intentar obtener URL de detalle (si la fila es clickeable)
+                    detail_url = ""
+                    try:
+                        # Buscar enlace en la fila
+                        link = row.find_element(By.TAG_NAME, "a")
+                        detail_url = link.get_attribute("href")
+                    except:
+                        detail_url = f"https://aysa.com.ar/proveedores/licitaciones/"
+                    
+                    # Crear resultado
+                    result = {
+                        "portal": self.name,
+                        "section": section_name,
+                        "title": f"{numero} - {objeto}",
+                        "numero_licitacion": numero,
+                        "objeto": objeto,
+                        "estado": estado,
+                        "fechas": fechas,
+                        "presupuesto": presupuesto,
+                        "url": detail_url,
+                        "content_snippet": objeto[:200],
+                        "full_text": f"Licitación {numero}: {objeto}. Estado: {estado}. Fechas: {fechas}. Presupuesto: {presupuesto}",
+                        "matched_keywords": [kw for kw in keywords if kw.lower() in objeto.lower()] if keywords else []
+                    }
+                    
+                    results.append(result)
+                    
+                except Exception as e:
+                    self.logger.debug(f"Error extrayendo fila: {e}")
+                    continue
+            
+        except Exception as e:
+            self.logger.error(f"Error extrayendo resultados de tabla: {e}")
+        
+        return results
 
 
 # ============================================================================
